@@ -1,0 +1,11 @@
+/.env
+
+/.venv
+
+/logs/
+/notes/
+
+/src/scraper_1000.egg-info/
+
+build/
+
