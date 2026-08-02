@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-src/interface/main.py
-src/scraper_1000.egg-info/PKG-INFO
-src/scraper_1000.egg-info/SOURCES.txt
-src/scraper_1000.egg-info/dependency_links.txt
-src/scraper_1000.egg-info/requires.txt
-src/scraper_1000.egg-info/top_level.txt
-src/source/scraping.py
