@@ -6,11 +6,16 @@ from dotenv import load_dotenv
 from src.source_bot.scraping import ScraperBot
 
 async def main() -> None:
-    # load_dotenv()
-    # guild_id = 1514322664473366559
+    GUILD_ID = 1514322664473366559
 
-    # await ScraperBot(guild_id).start(os.getenv('DISCORD_TOKEN'))
-    pass
+    load_dotenv()
+    bot = ScraperBot(GUILD_ID)
+    session = asyncio.create_task(bot.start(os.getenv('DISCORD_TOKEN')))
+
+    await bot.activate()
+
+    await bot.close()
+    session.cancel()
 
 if __name__ == "__main__":
-    pass # asyncio.run(main())
+    asyncio.run(main())
