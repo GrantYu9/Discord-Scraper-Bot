@@ -8,4 +8,5 @@
 /src/scraper_1000.egg-info/
 
 build/
+__pycache__/
 
