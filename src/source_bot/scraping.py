@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 
+from enum import Enum, auto
 from pathlib import Path
 
 import discord
@@ -14,13 +15,26 @@ class ScraperBot(discord.Client):
     """
 
     def __init__(self, guild_id: int):
+        UNBOUNDED = - 1
+
         self._INTENTS = discord.Intents.default()
         self._INTENTS.members = True
         self._INTENTS.message_content = True
         super().__init__(intents=self._INTENTS)
 
-        self._guild_id: int = 0 # !!!
-        self._initTimestampsBool: bool = False # !!!
+        self._guild: discord.Guild = None
+
+        print(self._guild.name)
+
+        self._queue: asyncio.Queue = None
+
+        self._scraped_data: dict[DataTypes, list[str] | int] = {
+            DataTypes.ChannelNames: [],
+            DataTypes.NumberOfMembers: 0
+        }
+
+        self._guildId: int = guild_id
+        self._initTimestampsBool: bool = False
 
     async def activate(self) -> None:
         pass # !!!
@@ -38,11 +52,6 @@ class ScraperBot(discord.Client):
     def _initTimestamps(self) -> None:
         """!!!
         """
-
-    async def _setGuild(self) -> None:
-        """!!!
-        """
-        pass # !!!
 
     async def _scrape(self) -> None:
         """!!!
@@ -74,10 +83,16 @@ class ScraperBot(discord.Client):
         """
         pass # !!!
 
+    # !!!
+
     def _writeTimestamps(self) -> None:
         """!!!
         """
         pass # !!!
+
+class DataTypes(Enum):
+    ChannelNames = auto()
+    NumberOfMembers = auto()
 
 class TimestampsAlreadyInitializedException(Exception):
     def __init__(self):
