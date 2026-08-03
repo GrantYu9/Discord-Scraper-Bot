@@ -15,7 +15,7 @@ class ScraperBot(discord.Client):
     """
 
     def __init__(self, guild_id: int):
-        UNBOUNDED = - 1
+        UNBOUNDED: int = -1
 
         self._INTENTS = discord.Intents.default()
         self._INTENTS.members = True
@@ -24,9 +24,7 @@ class ScraperBot(discord.Client):
 
         self._guild: discord.Guild = None
 
-        print(self._guild.name)
-
-        self._queue: asyncio.Queue = None
+        self._queue: asyncio.Queue = asyncio.Queue(UNBOUNDED)
 
         self._scraped_data: dict[DataTypes, list[str] | int] = {
             DataTypes.ChannelNames: [],
@@ -52,6 +50,12 @@ class ScraperBot(discord.Client):
     def _initTimestamps(self) -> None:
         """!!!
         """
+        pass # !!!
+
+    async def _setGuild(self) -> None:
+        """!!!
+        """
+        pass # !!!
 
     async def _scrape(self) -> None:
         """!!!
@@ -91,6 +95,9 @@ class ScraperBot(discord.Client):
         pass # !!!
 
 class DataTypes(Enum):
+    """!!!
+    """
+
     ChannelNames = auto()
     NumberOfMembers = auto()
 
