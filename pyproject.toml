@@ -2,9 +2,15 @@
 name = "scraper_1000"
 version = "0.1.0"
 dependencies = [
-    "aiofiles>=25.1.0",
     "discord.py>=2.0.0",
     "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-asyncio>=1.4.0",
+    "pytest-mock>=3.15.0",
 ]
 
 [tool.pytest.ini_options]

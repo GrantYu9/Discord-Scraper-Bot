@@ -3,7 +3,7 @@ import os
 
 from dotenv import load_dotenv
 
-from src.source_bot.scraping import ScraperBot
+from source_bot.scraping import ScraperBot
 
 async def main() -> None:
     GUILD_ID = 1514322664473366559
