@@ -1,10 +1,11 @@
-[
-    {
-        "id": 1529636937583956158,
-        "name": "CIC Scraper"
-    },
-    {
-        "id": 616457517597458435,
-        "name": "asentrygun"
+{
+    "Testing": {
+        "channel_names": [
+            "Text channels",
+            "Voice channels",
+            "general",
+            "General",
+            "scraper-bot"
+        ]
     }
-]
+}
