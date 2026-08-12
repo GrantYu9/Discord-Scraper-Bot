@@ -10,12 +10,10 @@ from src.source_bot.scraping import ScraperBot
 
 class TestScraping:
     @pytest.fixture
-    def scraper_bot() -> ScraperBot:
+    def scraper_bot(self) -> ScraperBot:
         DUMMY_NUMBER = 0
 
         return ScraperBot(DUMMY_NUMBER)
-
-    # !!!
     
     class Spy:
         ... # !!!
