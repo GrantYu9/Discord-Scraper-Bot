@@ -144,7 +144,7 @@ class ScraperBot(discord.Client):
         ... # !!!
 
 class DataType(Enum):
-    """!!!
+    """Data types that ScraperBot scrapes
     """
 
     ChannelNames = auto()
