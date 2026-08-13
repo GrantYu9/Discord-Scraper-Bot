@@ -21,7 +21,7 @@ class Scraper(discord.Client):
     internal dictionary will be pushed into the upper level queue that collects
     data from all guilds and will push it into an upper level dictionary. When
     processing of data from all guilds is complete, the upper level dictionary
-    will be conveerted into a JSON object and written to file.
+    will be converted into a JSON object and written to file.
 
     Attributes:
         _SRC (Path): The "src" directory. Helps methods with initialization
@@ -61,12 +61,18 @@ class Scraper(discord.Client):
     async def activate(self) -> None:
         """The entry point into the class and where the magic happens.
 
-        Activate will prepare the scraper for scraping, intiate a background
-        processor to process the data from each guild, scrape the guilds, close
-        the background processor, and write to file.
+        Activate will prepare the scraper for scraping, scrape the guilds, and
+        write to file
         """
 
-        ... # !!!
+        data = {}
+        queue = asyncio.Queue(self._UNBOUNDED)
+
+        await self._scrape_guilds(queue, data)
+
+        self._write_to_output_file(data)
+
+        # !!!
 
     # def _setUp(self) -> None:
     #     ... # !!!
@@ -87,29 +93,55 @@ class Scraper(discord.Client):
     
     async def _scrape_guilds(
         self, 
-        queue: asyncio.Queue[QueueData]) -> None:
+        queue: asyncio.Queue[QueueData],
+        data: dict) -> None:
         """Initiate scraping of all the guilds.
 
-        For each guild in self.guilds, initiate a scrape of the guild.
+        Initiate a background processor with "queue" and "data." For each guild
+        in self.guilds, initiate a scrape of the guild. Upon completion of all
+        scraping, cancel the processor.
         """
 
-        ... # !!!
+        processor = asyncio.create_task(self._process_queue(queue, data))
 
+        await asyncio.gather(
+            *(self._scrape_guild(guild, queue) for guild in self.guilds)
+        )
+
+        processor.cancel()
+
+        # !!!
+    
     async def _scrape_guild(
         self, 
         guild: discord.Guild,
-        queue_for_guilds: asyncio.Queue[QueueData]) -> None:
+        external_queue: asyncio.Queue[QueueData]) -> None:
         """Internally scrape data for "guild" and push the data into the queue.
 
         Create a local queue and a local data dict for "guild." A background
         processor will process this queue and modify the local dict when data
         from the subscrapers comes in. Each of the subscrapers takes the local
         queue so it can push data into it. When all the subscrapers are done,
-        the dict will be pushed to "queue_for_guilds" as a tuple:
+        the dict will be pushed to "external_queue" as a tuple:
         (guild.name, dict)
         """
 
-        ... # !!!
+        data = {}
+        internal_queue = asyncio.Queue(self._UNBOUNDED)
+
+        processor = asyncio.create_task(
+            self._process_queue(internal_queue, data)
+        )
+
+        await asyncio.gather(
+            # self._scrape_channel_names(guild, internal_queue),
+            self._scrape_number_of_members(guild, internal_queue)
+        )
+
+        processor.cancel()
+
+        await external_queue.put((guild.name, data))
+        # !!!
 
     async def _scrape_channel_names(
         self, 
@@ -119,7 +151,7 @@ class Scraper(discord.Client):
 
         Instantiate a local list. For each channel name in "guild", append it
         to list. Upon completion of iteration, push the list into "queue" as a
-        tuple: (self._DataType.ChannelNames, list).
+        tuple: (DataType.ChannelNames, list).
         """
 
         ... # !!!
@@ -132,10 +164,17 @@ class Scraper(discord.Client):
 
         Instantiate a local counter. For each member in "guild", increment the
         counter. Upon completion of iteration, push the counter into "queue" as 
-        a tuple: (self._DataType.NumberOfMembers, counter).
+        a tuple: (DataType.NumberOfMembers, counter).
         """
 
-        ... # !!!
+        number_of_members = 0
+
+        for member in await guild.fetch_members():
+            number_of_members += 1
+
+        await queue.put((DataType.NumberOfMembers, number_of_members))
+
+        # !!!
 
     async def _process_queue(
         self, 
@@ -148,20 +187,34 @@ class Scraper(discord.Client):
         meant to be very general with what data type "data" could be.
         """
 
-        ... # !!!
+        KEY = 0
+        VALUE = 1
 
-    def _finish(self, data: dict) -> None:
-        ... # !!!
+        while True:
+            item = await queue.get()
+
+            data[item[KEY]] = item[VALUE]
+
+        # !!!
+
+    # def _finish(self, data: dict) -> None:
+    #     ... # !!!
 
     def _write_to_output_file(self, data: dict) -> None:
-        ... # !!!
+        INDENT = 4
+        OUTPUT_FILE = self._SRC / "output" / "output.json"
+
+        with OUTPUT_FILE.open(mode='w') as file:
+            json.dump(data, file, indent=INDENT)
+
+        # !!!
 
     # def _write_timestamp_file(self) -> None:
     #     ... # !!!
 
-    class _DataType(StrEnum):
-        """A StrEnum of types that Scraper scrapes
-        """
+class DataType(StrEnum):
+    """A StrEnum of types that Scraper scrapes
+    """
 
-        ChannelNames = "channel_names"
-        NumberOfMembers = "number_of_members"
+    ChannelNames = "channel_names"
+    NumberOfMembers = "number_of_members"
