@@ -1,185 +1,167 @@
-"""A scraper and a data type enum
-
-!!!
+"""A scraper and a data type StrEnum
 """
 
 import asyncio
 import json
 
-from asyncio import Queue
-from datetime import datetime
-from enum import Enum, auto
+# from datetime import datetime
+from enum import StrEnum
 from pathlib import Path
 
 import discord
 
-from discord import Guild
-
 class Scraper(discord.Client):
-    """!!!
+    """A bot that scrapes data and writes as JSON to file.
 
-    !!!
+    The bot sets up depedencies, initiates processing of a queue in the
+    background, initiates scraping, and writes to file. While scraping, each
+    guild has its own internal queue to process data that each subscraper for
+    each supported data type will push data into. The internal processor will
+    modify an internal dictionary. When scraping is done for a guild, the
+    internal dictionary will be pushed into the upper level queue that collects
+    data from all guilds and will push it into an upper level dictionary. When
+    processing of data from all guilds is complete, the upper level dictionary
+    will be conveerted into a JSON object and written to file.
 
     Attributes:
-        !!!
+        _SRC (Path): The "src" directory. Helps methods with initialization
+            of file paths.
+        _UNBOUNDED (int): The size indicator for an unbounded asyncio.Queue.
     """
 
+    type Data = dict | list[str] | int
+
+    type QueueData = tuple[str, Data]
+
     def __init__(self):
-        """!!!
+        """Initializes depedencies
+
+        Sets up INTENTS for the discord API along with helpful static globals.
         """
 
         INTENTS = discord.Intents.default()
         INTENTS.members = True
         INTENTS.message_content = True
 
-        UNIX_EPOCH: int = 0
+        # UNIX_EPOCH: int = 0
 
         super().__init__(intents=INTENTS)
 
-        self._CURRENT_DATETIME: datetime = datetime.today()
+        # self._CURRENT_DATETIME: datetime = datetime.today()
         self._SRC: Path = Path(__file__).parent.parent
         self._UNBOUNDED: int = -1
-        self._UNIX_EPOCH: datetime = datetime.fromtimestamp(UNIX_EPOCH)
-
-        self._guilds: list[str] = []
-        self._readpoint: datetime = None
-        self._timestamp_file: Path = (
-            self._SRC / "persistence" / "timestamp.json"
-        )
+        # self._UNIX_EPOCH: datetime = datetime.fromtimestamp(UNIX_EPOCH)
+        
+        # self._guilds: list[str] = []
+        # self._readpoint: datetime = None
+        # self._timestamp_file: Path = (
+        #     self._SRC / "persistence" / "timestamp.json"
+        # )
     
     async def activate(self) -> None:
-        """!!!
+        """The entry point into the class and where the magic happens.
+
+        Activate will prepare the scraper for scraping, intiate a background
+        processor to process the data from each guild, scrape the guilds, close
+        the background processor, and write to file.
         """
-        data = {}
-        queue: Queue[tuple[DataType | str, dict]] = Queue(self._UNBOUNDED)
-
-        self._setUp()
-
-        processor = asyncio.create_task(self._process_queue(queue, data))
-
-        await self._scrape_guilds(queue)
-
-        processor.cancel()
-
-        self._finish(data)
 
         ... # !!!
 
-    def _setUp(self) -> None:
+    # def _setUp(self) -> None:
+    #     ... # !!!
+
+    # def _read_guilds_file(self) -> None:
+    #     """!!!
+    #     """
+
+    #     ... # !!!
+    
+    # def _read_timestamp_file(self) -> None:
+    #     """Reads _timestamp_file to initialize _timestamp_readpoint.
+
+    #     If no valid JSON to read, pass.
+    #     """
+
+    #     ... # !!!
+    
+    async def _scrape_guilds(
+        self, 
+        queue: asyncio.Queue[QueueData]) -> None:
+        """Initiate scraping of all the guilds.
+
+        For each guild in self.guilds, initiate a scrape of the guild.
+        """
+
         ... # !!!
 
-    def _read_guilds_file(self) -> None:
-        """!!!
+    async def _scrape_guild(
+        self, 
+        guild: discord.Guild,
+        queue_for_guilds: asyncio.Queue[QueueData]) -> None:
+        """Internally scrape data for "guild" and push the data into the queue.
+
+        Create a local queue and a local data dict for "guild." A background
+        processor will process this queue and modify the local dict when data
+        from the subscrapers comes in. Each of the subscrapers takes the local
+        queue so it can push data into it. When all the subscrapers are done,
+        the dict will be pushed to "queue_for_guilds" as a tuple:
+        (guild.name, dict)
         """
+
+        ... # !!!
+
+    async def _scrape_channel_names(
+        self, 
+        guild: discord.Guild, 
+        queue: asyncio.Queue[QueueData]) -> None:
+        """Fetch channel names from "guild" and push the names into "queue."
+
+        Instantiate a local list. For each channel name in "guild", append it
+        to list. Upon completion of iteration, push the list into "queue" as a
+        tuple: (self._DataType.ChannelNames, list).
+        """
+
         ... # !!!
     
-    def _read_timestamp_file(self) -> None:
-        """Reads _timestamp_file to initialize _timestamp_readpoint.
+    async def _scrape_number_of_members(
+        self, 
+        guild: discord.Guild, 
+        queue: asyncio.Queue[QueueData]) -> None:
+        """Count members from "guild" and push count into "queue."
 
-        If no valid JSON to read, pass.
-        """
-
-        ... # !!!
-    
-    async def _scrape_guilds(self, queue: Queue) -> None:
-        """!!!!
-        """
-
-        tasks = []
-
-        for guild in self.guilds:
-            if guild in self._guilds:
-                timepoint = self._readpoint
-            else:
-                timepoint = self._UNIX_EPOCH
-            
-            tasks.append(self._scrape_guild(guild, queue, timepoint))
-        
-        await asyncio.gather(*tasks)
-                
-
-        ... # !!!
-
-    async def _scrape_guild(self, 
-        guild: Guild, queue_guilds: Queue, readpoint: datetime) -> None:
-        """!!!
-        """
-
-        queue_guild = Queue(self._UNBOUNDED)
-
-        data = {}
-
-        inner_processor = asyncio.create_task(self._process_queue(queue_guild, data))
-
-        await asyncio.gather(
-            self._scrape_channel_names(guild, queue_guild, readpoint),
-            self._scrape_number_of_members(guild, queue_guild, readpoint)
-        )
-
-        inner_processor.cancel()
-
-        await queue_guilds.put((guild.name, data))
-
-        ... # !!!
-
-    async def _scrape_channel_names(self, 
-        guild: Guild, queue: Queue, readpoint: datetime) -> None:
-        """!!!
-        """
-
-        channel_names: list[str] = []
-
-        for channel in await guild.fetch_channels():
-            channel_names.append(channel.name)
-
-        await queue.put((DataType.ChannelNames.value, channel_names))
-        ... # !!!
-    
-    async def _scrape_number_of_members(self, 
-        guild: Guild, queue: Queue, readpoint: datetime) -> None:
-        """!!!
+        Instantiate a local counter. For each member in "guild", increment the
+        counter. Upon completion of iteration, push the counter into "queue" as 
+        a tuple: (self._DataType.NumberOfMembers, counter).
         """
 
         ... # !!!
 
-    async def _process_queue(self, queue: Queue, output: dict) -> None:
-        """!!!
+    async def _process_queue(
+        self, 
+        queue: asyncio.Queue[QueueData], 
+        data: dict) -> None:
+        """Update "data" with every item in "queue."
+
+        Let KEY = 0 and VALUE = 1. While True, take an item from "queue" and
+        modify "data" such that data[item[KEY]] = item[VALUE]. _process_queue is
+        meant to be very general with what data type "data" could be.
         """
-        KEY: int = 0
-        VALUE: int = 1
-
-        while True:
-            item = await queue.get()
-
-            output[item[KEY]] = item[VALUE]
 
         ... # !!!
 
     def _finish(self, data: dict) -> None:
-        self._write_to_output_file(data)
-        self._write_timestamp_file()
         ... # !!!
 
     def _write_to_output_file(self, data: dict) -> None:
-        """Write _scraped_data as valid JSON to _output_file. !!!
-        """
-
-        OUTPUT_FILE: Path = self._SRC / "output" / "output.json"
-
-        with OUTPUT_FILE.open(mode='w') as file:
-            file.write(json.dumps(data, indent=4))
-
         ... # !!!
 
-    def _write_timestamp_file(self) -> None:
-        """Update _timestamp_file with self._CURRENT_TIME
+    # def _write_timestamp_file(self) -> None:
+    #     ... # !!!
+
+    class _DataType(StrEnum):
+        """A StrEnum of types that Scraper scrapes
         """
-        
-        ... # !!!
 
-class DataType(Enum):
-    """Data types that ScraperBot scrapes
-    """
-
-    ChannelNames = "channel_names"
-    NumberOfMembers = "number_of_members"
+        ChannelNames = "channel_names"
+        NumberOfMembers = "number_of_members"
