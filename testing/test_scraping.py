@@ -19,9 +19,6 @@ class TestScraper:
 
     _OUTPUT_FILE: Path = _PROJECT_ROOT / "src" / "output" / "output.json"
 
-    _EXPECTED_EMPTY_STRING: str = ""
-    _EXPECTED_NONE: int = 0
-    _EXPECTED_ONE: int = 1
     _NAME_TEST: str = "Test"
     
     @pytest.fixture
@@ -62,13 +59,12 @@ class TestScraper:
     async def test_through_interface_scrape_number_of_members_none(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
         EXPECTED = {
             self._NAME_TEST: {
-                DataType.NumberOfMembers: self._EXPECTED_NONE
+                DataType.NumberOfMembers: 0
             }
         }
 
-        self._set_up_guild_test(mocker, monkeypatch)
-        mock_fetch_members = mocker.patch("discord.Guild.fetch_members")
-        mock_fetch_members.return_value = []
+        mock_guild = self._set_up_guild_test(mocker, monkeypatch)
+        mock_guild.fetch_members.return_value = self._async_generator([])
 
         await self._activate_scraper(mocker, scraper)
 
@@ -79,22 +75,34 @@ class TestScraper:
     async def test_through_interface__scrape_number_of_members_one(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
         EXPECTED = {
             self._NAME_TEST: {
-                DataType.NumberOfMembers: self._EXPECTED_ONE
+                DataType.NumberOfMembers: 1
             }
         }
 
-        self._set_up_guild_test(mocker, monkeypatch)
+        mock_guild = self._set_up_guild_test(mocker, monkeypatch)
         mock_member = mocker.MagicMock()
-        mock_fetch_members = mocker.patch("discord.Guild.fetch_members")
-        mock_fetch_members.return_value = self._async_generator([mock_member])
+        mock_guild.fetch_members.return_value = self._async_generator([mock_member])
 
         await self._activate_scraper(mocker, scraper)
 
         assert self._read_and_wipe_output_file() == EXPECTED
 
     @pytest.mark.asyncio
-    async def test_through_interface_scrape_number_of_members_nontrivial_positive_integer(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+    async def test_through_interface_scrape_number_of_members_three(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
+        EXPECTED = {
+            self._NAME_TEST: {
+                DataType.NumberOfMembers: 3
+            }
+        }
+
+
+        mock_guild = self._set_up_guild_test(mocker, monkeypatch)
+        mock_members = [mocker.MagicMock() for i in range(3)]
+        mock_guild.fetch_members.return_value = self._async_generator(mock_members)
+
+        await self._activate_scraper(mocker, scraper)
+
+        assert self._read_and_wipe_output_file() == EXPECTED
 
     @pytest.mark.asyncio 
     async def test_through_interface_scrape_guild_empty(self, mocker: MockerFixture, scraper: Scraper) -> None:
@@ -168,7 +176,9 @@ class TestScraper:
         
         return data
 
-    def _set_up_guild_test(self, mocker: MockerFixture, monkeypatch) -> None:
-        mock_guild = mocker.AsyncMock()
+    def _set_up_guild_test(self, mocker: MockerFixture, monkeypatch) -> AsyncMock:
+        mock_guild = mocker.MagicMock()
         mock_guild.name = self._NAME_TEST
         monkeypatch.setattr(Scraper, "guilds", [mock_guild])
+
+        return mock_guild

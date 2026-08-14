@@ -174,8 +174,6 @@ class Scraper(discord.Client):
 
         await queue.put((DataType.NumberOfMembers, number_of_members))
 
-        # !!!
-
     async def _process_queue(
         self, 
         queue: asyncio.Queue[QueueData], 
