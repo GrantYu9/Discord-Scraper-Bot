@@ -3,6 +3,7 @@ import json
 import os
 
 from collections.abc import AsyncGenerator
+from enum import StrEnum
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -20,6 +21,7 @@ class TestScraper:
     _OUTPUT_FILE: Path = _PROJECT_ROOT / "src" / "output" / "output.json"
 
     _NAME_TEST: str = "Test"
+    _SCRAPER_PATH: str = "src.source_bot.scraping.Scraper."
     
     @pytest.fixture
     def scraper(self) -> Scraper:
@@ -36,24 +38,61 @@ class TestScraper:
         assert scraper.intents == expected_intents
 
     @pytest.mark.asyncio
-    async def test_through_interface_scrape_channel_names_none(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+    async def test_through_interface_scrape_channel_names_none(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
+        test_name = "test"
+
+        EXPECTED = {
+            self._NAME_TEST: {
+                DataType.ChannelNames: [test_name]
+            }
+        }
+
+        mock_channel = mocker.MagicMock()
+        mock_channel.name = test_name
+        mock_guild = self._set_up_guild_test(mocker.AsyncMock(), monkeypatch)
+        mock_guild.fetch_channels.return_value = [mock_channel]
+        self._isolate_subscraper(mocker, self._SubScraper.ScrapeChannelNames)
+
+        await self._activate_scraper(mocker, scraper)
+
+        assert self._read_and_wipe_output_file() == EXPECTED
 
     @pytest.mark.asyncio
-    async def test_through_interface_scrape_channel_names_one_text(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+    async def test_through_interface_scrape_channel_names_one(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
+        EXPECTED = {
+            self._NAME_TEST: {
+                DataType.ChannelNames: []
+            }
+        }
+
+        mock_guild = self._set_up_guild_test(mocker.AsyncMock(), monkeypatch)
+        mock_guild.fetch_channels.return_value = []
+        self._isolate_subscraper(mocker, self._SubScraper.ScrapeChannelNames)
+
+        await self._activate_scraper(mocker, scraper)
+
+        assert self._read_and_wipe_output_file() == EXPECTED
 
     @pytest.mark.asyncio
-    async def test_through_interface_scrape_channel_names_one_voice(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+    async def test_through_interface_scrape_channel_names_three(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
+        test_names = ["test_zero", "test_one", "test_two"]
 
-    @pytest.mark.asyncio
-    async def test_through_interface_scrape_channel_names_text_and_voice_same_name(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+        EXPECTED = {
+            self._NAME_TEST: {
+                DataType.ChannelNames: test_names
+            }
+        }
 
-    @pytest.mark.asyncio
-    async def test_through_interface_scrape_channel_names_six_mix(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+        mock_channels = [mocker.MagicMock() for name in test_names]
+        for i in range(len(test_names)):
+            mock_channels[i].name = test_names[i]
+        mock_guild = self._set_up_guild_test(mocker.AsyncMock(), monkeypatch)
+        mock_guild.fetch_channels.return_value = mock_channels
+        self._isolate_subscraper(mocker, self._SubScraper.ScrapeChannelNames)
+
+        await self._activate_scraper(mocker, scraper)
+
+        assert self._read_and_wipe_output_file() == EXPECTED
 
     @pytest.mark.asyncio
     async def test_through_interface_scrape_number_of_members_none(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
@@ -63,8 +102,9 @@ class TestScraper:
             }
         }
 
-        mock_guild = self._set_up_guild_test(mocker, monkeypatch)
+        mock_guild = self._set_up_guild_test(mocker.MagicMock(), monkeypatch)
         mock_guild.fetch_members.return_value = self._async_generator([])
+        self._isolate_subscraper(mocker, self._SubScraper.ScrapeNumberOfMembers)
 
         await self._activate_scraper(mocker, scraper)
 
@@ -79,9 +119,10 @@ class TestScraper:
             }
         }
 
-        mock_guild = self._set_up_guild_test(mocker, monkeypatch)
+        mock_guild = self._set_up_guild_test(mocker.MagicMock(), monkeypatch)
         mock_member = mocker.MagicMock()
         mock_guild.fetch_members.return_value = self._async_generator([mock_member])
+        self._isolate_subscraper(mocker, self._SubScraper.ScrapeNumberOfMembers)
 
         await self._activate_scraper(mocker, scraper)
 
@@ -95,10 +136,10 @@ class TestScraper:
             }
         }
 
-
-        mock_guild = self._set_up_guild_test(mocker, monkeypatch)
+        mock_guild = self._set_up_guild_test(mocker.MagicMock(), monkeypatch)
         mock_members = [mocker.MagicMock() for i in range(3)]
         mock_guild.fetch_members.return_value = self._async_generator(mock_members)
+        self._isolate_subscraper(mocker, self._SubScraper.ScrapeNumberOfMembers)
 
         await self._activate_scraper(mocker, scraper)
 
@@ -164,6 +205,16 @@ class TestScraper:
     async def _async_generator(self, content: list[MagicMock]) -> AsyncGenerator[MagicMock]:
         for item in content:
             yield item
+    
+    def _isolate_subscraper(self, mocker: MockerFixture, subscraper: _SubScraper) -> None:
+        for enumeration in self._SubScraper:
+            if enumeration != subscraper:
+                mocker.patch(self._SCRAPER_PATH + enumeration)
+
+    def _isolate_subscrapers(self, mocker: MockerFixture, subscrapers: list[_SubScraper]) -> None:
+        for enumeration in self._SubScraper:
+            if enumeration not in subscrapers:
+                mocker.patch(self._SCRAPER_PATH + enumeration)
 
     def _read_output_file(self) -> str:
         with self._OUTPUT_FILE.open(mode='r') as file:
@@ -176,9 +227,12 @@ class TestScraper:
         
         return data
 
-    def _set_up_guild_test(self, mocker: MockerFixture, monkeypatch) -> AsyncMock:
-        mock_guild = mocker.MagicMock()
+    def _set_up_guild_test(self, mock_guild, monkeypatch) -> AsyncMock:
         mock_guild.name = self._NAME_TEST
         monkeypatch.setattr(Scraper, "guilds", [mock_guild])
 
         return mock_guild
+    
+    class _SubScraper(StrEnum):
+        ScrapeChannelNames = "_scrape_channel_names"
+        ScrapeNumberOfMembers = "_scrape_number_of_members"

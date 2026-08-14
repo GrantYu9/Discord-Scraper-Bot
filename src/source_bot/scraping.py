@@ -134,13 +134,14 @@ class Scraper(discord.Client):
         )
 
         await asyncio.gather(
-            # self._scrape_channel_names(guild, internal_queue),
+            self._scrape_channel_names(guild, internal_queue),
             self._scrape_number_of_members(guild, internal_queue)
         )
 
         processor.cancel()
 
         await external_queue.put((guild.name, data))
+        
         # !!!
 
     async def _scrape_channel_names(
@@ -154,7 +155,11 @@ class Scraper(discord.Client):
         tuple: (DataType.ChannelNames, list).
         """
 
-        ... # !!!
+        channel_names = [
+            channel.name for channel in await guild.fetch_channels()
+        ]
+
+        await queue.put((DataType.ChannelNames, channel_names))
     
     async def _scrape_number_of_members(
         self, 
