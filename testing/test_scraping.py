@@ -2,7 +2,9 @@ import asyncio
 import json
 import os
 
+from collections.abc import AsyncGenerator
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
@@ -19,6 +21,7 @@ class TestScraper:
 
     _EXPECTED_EMPTY_STRING: str = ""
     _EXPECTED_NONE: int = 0
+    _EXPECTED_ONE: int = 1
     _NAME_TEST: str = "Test"
     
     @pytest.fixture
@@ -67,14 +70,27 @@ class TestScraper:
         mock_fetch_members = mocker.patch("discord.Guild.fetch_members")
         mock_fetch_members.return_value = []
 
-        await self._activate_scraper(scraper)
+        await self._activate_scraper(mocker, scraper)
 
         assert self._read_and_wipe_output_file() == EXPECTED
 
 
     @pytest.mark.asyncio
-    async def through_interafce_test_scrape_number_of_members_one(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+    async def test_through_interface__scrape_number_of_members_one(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
+        EXPECTED = {
+            self._NAME_TEST: {
+                DataType.NumberOfMembers: self._EXPECTED_ONE
+            }
+        }
+
+        self._set_up_guild_test(mocker, monkeypatch)
+        mock_member = mocker.MagicMock()
+        mock_fetch_members = mocker.patch("discord.Guild.fetch_members")
+        mock_fetch_members.return_value = self._async_generator([mock_member])
+
+        await self._activate_scraper(mocker, scraper)
+
+        assert self._read_and_wipe_output_file() == EXPECTED
 
     @pytest.mark.asyncio
     async def test_through_interface_scrape_number_of_members_nontrivial_positive_integer(self, mocker: MockerFixture, scraper: Scraper) -> None:
@@ -122,8 +138,11 @@ class TestScraper:
     async def test_activate(self, mocker: MockerFixture) -> None:
         ... # !!!
 
-    async def _activate_scraper(self, scraper: Scraper) -> None:
-        load_dotenv()
+    async def _activate_scraper(self, mocker: MockerFixture, scraper: Scraper) -> None:
+        mocker.patch("discord.Client.login")
+        mocker.patch("discord.Client.connect")
+        mocker.patch("discord.Client.wait_until_ready")
+        mocker.patch("discord.Client.close")
 
         await scraper.login(os.getenv('DISCORD_TOKEN'))
         session = asyncio.create_task(scraper.connect())
@@ -133,6 +152,10 @@ class TestScraper:
 
         await scraper.close()
         session.cancel()
+
+    async def _async_generator(self, content: list[MagicMock]) -> AsyncGenerator[MagicMock]:
+        for item in content:
+            yield item
 
     def _read_output_file(self) -> str:
         with self._OUTPUT_FILE.open(mode='r') as file:

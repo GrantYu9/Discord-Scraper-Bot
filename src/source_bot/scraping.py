@@ -169,7 +169,7 @@ class Scraper(discord.Client):
 
         number_of_members = 0
 
-        for member in await guild.fetch_members():
+        async for member in guild.fetch_members():
             number_of_members += 1
 
         await queue.put((DataType.NumberOfMembers, number_of_members))
