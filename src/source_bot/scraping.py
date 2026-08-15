@@ -198,8 +198,6 @@ class Scraper(discord.Client):
 
             data[item[KEY]] = item[VALUE]
 
-        # !!!
-
     # def _finish(self, data: dict) -> None:
     #     ... # !!!
 
