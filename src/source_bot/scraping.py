@@ -210,8 +210,6 @@ class Scraper(discord.Client):
         with OUTPUT_FILE.open(mode='w') as file:
             json.dump(data, file, indent=INDENT)
 
-        # !!!
-
     # def _write_timestamp_file(self) -> None:
     #     ... # !!!
 
