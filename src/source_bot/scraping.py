@@ -141,8 +141,6 @@ class Scraper(discord.Client):
         processor.cancel()
 
         await external_queue.put((guild.name, data))
-        
-        # !!!
 
     async def _scrape_channel_names(
         self, 

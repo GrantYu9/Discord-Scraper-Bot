@@ -39,8 +39,6 @@ class TestScraper:
 
     @pytest.mark.asyncio
     async def test_through_interface_scrape_channel_names_none(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
-        
-
         EXPECTED = {
             self._NAME_TEST: {
                 DataType.ChannelNames: []
@@ -149,23 +147,23 @@ class TestScraper:
         assert self._read_and_wipe_output_file() == EXPECTED
 
     @pytest.mark.asyncio 
-    async def test_through_interface_scrape_guild_empty(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+    async def test_through_interface_scrape_guild_empty(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
+        await self._test_two_guilds_empty(mocker, monkeypatch, scraper)
 
     @pytest.mark.asyncio
-    async def test_through_interface_scrape_guild_something(self, mocker: MockerFixture, scraper: Scraper) -> None:
-        ... # !!!
+    async def test_through_interface_scrape_guild_something(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
+        await self._test_two_guilds(mocker, monkeypatch, scraper)
 
     @pytest.mark.asyncio
-    async def test_through_interface_scrape_guilds_none(self, mocker: MockerFixture, scraper: Scraper) -> None:
+    async def test_through_interface_scrape_guilds_none(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
         ... # !!!
     
     @pytest.mark.asyncio
-    async def test_through_interface_scrape_guilds_one(self, mocker: MockerFixture, scraper: Scraper) -> None:
+    async def test_through_interface_scrape_guilds_one(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
         ... # !!!
 
     @pytest.mark.asyncio  
-    async def test_through_interface_scrape_guilds_three(self, mocker: MockerFixture, scraper: Scraper) -> None:
+    async def test_through_interface_scrape_guilds_three(self, mocker: MockerFixture, monkeypatch, scraper: Scraper) -> None:
         ... # !!!
 
     @pytest.mark.asyncio
@@ -278,14 +276,14 @@ class TestScraper:
 
         return mock_guild
     
-    def _set_up_two_guilds(self, channel_names_list: tuple[str], member_names_list: tuple[str], mocker: MockerFixture, monkeypatch, scraper: Scraper):
+    def _set_up_two_guilds(self, channel_names_lists: tuple[str], member_names_lists: tuple[str], mocker: MockerFixture, monkeypatch, scraper: Scraper):
         mock_guilds = []
         names = [self._NAME_DUMMY, self._NAME_TEST]
 
-        channels_one = self._create_channels(channel_names_list[0], mocker)
-        channels_two = self._create_channels(channel_names_list[1], mocker)
-        members_one = self._create_members(member_names_list[0], mocker)
-        members_two = self._create_members(member_names_list[1], mocker)
+        channels_one = [] if len(channel_names_lists) == 0 else self._create_channels(channel_names_lists[0], mocker)
+        channels_two = [] if len(channel_names_lists) == 0 else self._create_channels(channel_names_lists[1], mocker)
+        members_one = [] if len(member_names_lists) == 0 else self._create_members(member_names_lists[0], mocker)
+        members_two = [] if len(member_names_lists) == 0 else self._create_members(member_names_lists[1], mocker)
 
         pairs = [
             (channels_one, members_one),
