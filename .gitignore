@@ -6,6 +6,8 @@
 /logs/
 /notes/
 /src/scraper_1000.egg-info/
+/src/output/*
+!/src/output/.gitkeep
 
 build/
 __pycache__/
