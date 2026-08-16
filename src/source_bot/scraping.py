@@ -72,8 +72,6 @@ class Scraper(discord.Client):
 
         self._write_to_output_file(data)
 
-        # !!!
-
     # def _setUp(self) -> None:
     #     ... # !!!
 
@@ -109,8 +107,6 @@ class Scraper(discord.Client):
         )
 
         processor.cancel()
-
-        # !!!
     
     async def _scrape_guild(
         self, 
