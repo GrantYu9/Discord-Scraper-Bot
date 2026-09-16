@@ -3,7 +3,7 @@ import os
 
 from dotenv import load_dotenv
 
-from src.source_bot.scraping import Scraper
+from src.backend.scraping import Scraper
 
 async def main() -> None:
     """!!!

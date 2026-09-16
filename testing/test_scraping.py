@@ -12,7 +12,7 @@ import pytest
 
 from pytest_mock import MockerFixture
 
-from src.source_bot.scraping import DataType, Scraper
+from src.backend.scraping import DataType, Scraper
 
 class TestScraper:
     _PROJECT_ROOT: Path = Path(__file__).parent.parent
@@ -20,7 +20,7 @@ class TestScraper:
     _OUTPUT_FILE: Path = _PROJECT_ROOT / "src" / "output" / "output.json"
 
     _NAME_GUILD: str = "Test"
-    _SCRAPER_PATH: str = "src.source_bot.scraping.Scraper."
+    _SCRAPER_PATH: str = "src.backend.scraping.Scraper."
     
     @pytest.fixture
     def scraper(self) -> Scraper:
